@@ -1,18 +1,18 @@
-# This script was for testing an approach to solving the Goren et al. (2014) river
+# This script was for testing an MCMC approach to solving the Goren et al. (2014) river
 # profile inversion by downsampling river data to a coarser grid using a bilinear
 # interpolation.
 #
-
-import numpy as np
-import pystan
-import stan_utility
-from grid_utils import create_grid
-import os
-import sampling_utils
-import pandas
-import matplotlib.pyplot as plt
-
+# Dorran Howell
+#
 if __name__ == "__main__":
+    import numpy as np
+    import stan_utility
+    from grid_utils import create_grid
+    import os
+    import sampling_utils
+    import pandas
+    import matplotlib.pyplot as plt
+    
     ## ------------------------RUN PARAMETERS ------------------------------##
     out_dir_name = "Samples_IDW_Testing_02232018"
     input_file = "./inputs/presorted_drainage_data_example.txt"
@@ -151,6 +151,7 @@ if __name__ == "__main__":
     print('Mean Posterior rmse: '  + str(rmse))
     print("DONE!")
 
+    # Plot results
     fig = plt.figure(1)
     fig.clf()
     for i in range(0,M*2):

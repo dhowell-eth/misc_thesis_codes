@@ -1,0 +1,25 @@
+data {
+            int N;                  // Number of Rows
+            int M;                  // Number of Cols (Equals n_spatial*n_temporal nodes)
+            real uMin;              // A-priori Minimum for Uplift Rate
+            real uMean;             // A-priori Mean for a Normally Distributed U
+            real uSdev;             // A-priori SDEV for a Normally Distributed U
+            real sdevData;          // Diagonal terms of our Data Covariance Matrix
+            matrix[N,M] A;          // Forward Model Matrix
+            vector<lower=0>[N] y;   // Response (elevation, z)
+            }
+parameters {
+            // Array of independent parameters - uplift rates
+            vector<lower=uMin>[M] u;   
+            }
+transformed parameters {
+            vector[N] fwd;
+            fwd = A*u;
+    }
+model {
+            // PRIORS
+            u ~ normal(uMean,uSdev);
+
+            // LIKELIHOOD
+            y ~ normal(fwd,sdevData);
+            }

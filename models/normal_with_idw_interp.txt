@@ -1,0 +1,68 @@
+functions {
+	vector interpolate_to_stream_nodes(matrix weights_idw,
+										vector gridVals, int nSteps, int nNodes,
+										int N, int M) {
+			// NOTE: USES WEIGHTS FROM IDW INTERPOLATION
+			
+			// Declare Local Variables
+			int startNodes;
+			int stopNodes;
+			int startOutput;
+			int stopOutput;
+			vector[M] output;
+
+			// Apply interpolation across space but not across timesteps
+    		for (t in 1:nSteps) {
+    				// Get indices for this timestep
+    				startNodes = (t-1)*nNodes+1 ;
+    				stopNodes = startNodes+nNodes-1;
+    				startOutput = (t-1)*N+1;
+    				stopOutput = startOutput+N-1;
+
+    				// Apply interpolation and assign to output
+    				output[startOutput:stopOutput] = weights_idw * gridVals[startNodes:stopNodes]; // using matrix mult.		
+        	}
+
+			return output;
+	}
+}
+data {
+            int N;                  // Number of Rows
+            int M;                  // Number of Cols (Equals n_spatial*n_temporal nodes)
+			int nSteps;				// Number of Timesteps
+            real uMin;              // A-priori Minimum for Uplift Rate
+            real uMean;             // A-priori Mean for a Normally Distributed U
+            real uSdev;             // A-priori SDEV for a Normally Distributed U
+            real sdevData;          // Diagonal terms of our Data Covariance Matrix
+            matrix[N,M] A;          // Forward Model Matrix
+            vector<lower=0>[N] y;   // Response (elevation, z)
+			
+			int nNodes;				// Number of uplift grid nodes
+			matrix[N,nNodes] weights_idw;    // Matrix of spatial weights for interpolation
+            }
+parameters {
+            // Array of independent parameters - uplift rates
+            vector<lower=0.0>[nNodes*nSteps] u;  
+            }
+model {
+			//vector[N] yNorm;
+			//vector[nNodes*nSteps] uNorm;
+           	vector[N] fwd;
+			vector[M] uStream;
+
+            // Transform U Parameters @ Grid Nodes to Elevations @ Stream nodes to Evaluate Misfit
+			uStream = interpolate_to_stream_nodes(weights_idw,u,nSteps,nNodes,N,M);
+            fwd = A*uStream;
+
+			// PRIORS
+			//uNorm = (u - uMean) / uSdev;
+			//uNorm ~ normal(0.0,1.0);
+			u ~ normal(uMean,uSdev);
+
+            // LIKELIHOOD
+            // Normalizing y to be sampled over a unit gaussian
+            //yNorm = (y - fwd) / sdevData;
+            //yNorm ~ normal(0.0,1.0);
+            y ~ normal(fwd,sdevData);
+	}
+            
